@@ -1,39 +1,25 @@
 import tkinter
 import tkinter.font
 
+from DocumentLayout import DocumentLayout
 from HTMLParser import HTMLParser
 from Text import Text
 from Element import Element
-from Layout import Layout, VSTEP, WIDTH, HEIGHT, update_WIDTH, update_HEIGHT
+from BlockLayout import BlockLayout, VSTEP, WIDTH, HEIGHT, update_WIDTH, update_HEIGHT
 
 SCROLL_STEP = 100
 
 
-def lex(body):
-    # parse the web page
+def paint_tree(layout_object, display_list):
+    display_list.extend(layout_object.paint())
 
-    out = []
-    buffer = ""
-    in_tag = False
-    for c in body:
-        if c == "<":
-            in_tag = True
-            if buffer:
-                out.append(Text(buffer))
-            buffer = ""
-        elif c == ">":
-            in_tag = False
-            out.append(Element(buffer))
-            buffer = ""
-        else:
-            buffer += c
-    if not in_tag and buffer:
-        out.append(Text(buffer))
-    return out
+    for child in layout_object.children:
+        paint_tree(child, display_list)
 
 
 class Browser:
     def __init__(self):
+        self.document = None
         self.display_list = None
         self.nodes = None
         self.scroll = 0
@@ -79,8 +65,13 @@ class Browser:
         self.render()
 
     def render(self):
-        self.display_list = Layout(self.nodes).display_list
+        self.document = DocumentLayout(self.nodes)
+        self.document.layout()
+
+        self.display_list = []
+        paint_tree(self.document, self.display_list)
         self.draw()
+
     # ===================== END - DRAW TO WINDOW SECTION =====================
 
     # ===================== HANDLE EVENT SECTION =====================
