@@ -1,7 +1,9 @@
 import tkinter
 import tkinter.font
+
+from HTMLParser import HTMLParser
 from Text import Text
-from Tag import Tag
+from Element import Element
 from Layout import Layout, VSTEP, WIDTH, HEIGHT, update_WIDTH, update_HEIGHT
 
 SCROLL_STEP = 100
@@ -21,7 +23,7 @@ def lex(body):
             buffer = ""
         elif c == ">":
             in_tag = False
-            out.append(Tag(buffer))
+            out.append(Element(buffer))
             buffer = ""
         else:
             buffer += c
@@ -32,7 +34,8 @@ def lex(body):
 
 class Browser:
     def __init__(self):
-        self.tokens = None
+        self.display_list = None
+        self.nodes = None
         self.scroll = 0
 
         self.window = tkinter.Tk()
@@ -71,11 +74,12 @@ class Browser:
     def load(self, url):
         # get response from server and get the text
         body = url.request()
-        self.tokens = lex(body)
+        self.nodes = HTMLParser(body).parse()
+
         self.render()
 
     def render(self):
-        self.display_list = Layout(self.tokens).display_list
+        self.display_list = Layout(self.nodes).display_list
         self.draw()
     # ===================== END - DRAW TO WINDOW SECTION =====================
 
