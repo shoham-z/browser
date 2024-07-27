@@ -25,29 +25,32 @@ class URL:
             type=socket.SOCK_STREAM,
             proto=socket.IPPROTO_TCP,
         )
-        s.connect((self.host, self.port))
+
         if self.scheme == "https":
             ctx = ssl.create_default_context()
             s = ctx.wrap_socket(s, server_hostname=self.host)
 
-        # construct and send request
+        s.connect((self.host, self.port))
+
+        # construction and sending the request
         request = "GET {} HTTP/1.0\r\n".format(self.path)
         request += "Host: {}\r\n".format(self.host)
         request += "\r\n"
         s.send(request.encode("utf8"))
 
-        # get response
+        # receive the response from the server
         response = s.makefile("r", encoding="utf8", newline="\r\n")
 
-        # read version and request status from response
+        # extract the http version and status code from the first line of the response
         statusline = response.readline()
         version, status, explanation = statusline.split(" ", 2)
 
-        # read headers from response
+        # read all the headers from the response
         response_headers = {}
         while True:
             line = response.readline()
-            if line == "\r\n": break
+            if line == "\r\n":
+                break
             header, value = line.split(":", 1)
             response_headers[header.casefold()] = value.strip()
 
